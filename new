@@ -1,0 +1,239 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <algorithm> // for sorting
+
+using namespace std;
+
+const int CLASSSIZE = 35;
+const double BAR = 60;
+
+const double POINTA = 93.0;
+const double POINTAMINUS = 90.0;
+const double POINTBPLUS = 87.0;
+const double POINTB = 83.0;
+const double POINTBMINUS = 80.0;
+const double POINTCPLUS = 77.0;
+const double POINTC = 73.0;
+const double POINTCMINUS = 70.0;
+const double POINTD = 60.0;
+const double CURVEA = 85.0;
+const double CURVEAMINUS = 70.0;
+const double CURVEBPLUS = 58.3;
+const double CURVEB = 46.6;
+const double CURVEBMINUS = 35.0;
+const double CURVECPLUS = 30.0;
+const double CURVEC = 25.0;
+const double CURVECMINUS = 20.0;
+const double CURVED = 10.0;
+
+enum Grade { F, D, CMINUS, C, CPLUS, BMINUS, B, BPLUS, AMINUS, A };
+
+struct StudentData {
+    string lastName;
+    string firstName;
+    double score;
+    double percentage;
+    Grade pointGrade;
+    Grade curveGrade;
+    Grade finalGrade;
+};
+
+// Function to convert enumerated data into string data for letter grades
+string letterGrade(Grade g) {
+    switch (g) {
+    case F: return "F";
+    case D: return "D";
+    case CMINUS: return "C-";
+    case C: return "C";
+    case CPLUS: return "C+";
+    case BMINUS: return "B-";
+    case B: return "B";
+    case BPLUS: return "B+";
+    case AMINUS: return "A-";
+    case A: return "A";
+    default: return "Error";
+    }
+}
+
+// Function to insert a new student into the dynamic array
+bool insert(StudentData** v, StudentData n, int& b, int& s) {
+    if (b < s) {
+        (*v)[b] = n;
+        b++;
+        return true;
+    }
+    else {
+        // If the array is full, double its size
+        s *= 2;
+        StudentData* temp = new StudentData[s];
+        for (int i = 0; i < b; ++i) {
+            temp[i] = (*v)[i];
+        }
+        delete[] * v;
+        *v = temp;
+        // Insert the new student
+        (*v)[b] = n;
+        b++;
+        return true;
+    }
+    return false;
+}
+
+// Function to output grades to a file
+// Function to output grades to a file
+// Function to output grades to a file
+void outputGradeBook(string ofileName, StudentData s[], int size) {
+    ofstream outputFile(ofileName);
+    if (!outputFile.is_open()) {
+        cerr << "Error opening file: " << ofileName << endl;
+        return;
+    }
+
+    // Sorting the array alphabetically based on last names
+    sort(s, s + size, [](const StudentData& a, const StudentData& b) {
+        return a.lastName < b.lastName;
+        });
+
+    outputFile << setw(15) << left << "Last Name" << setw(15) << left << "First Name"
+        << setw(8) << right << "Points" << setw(8) << right << "Grade"
+        << setw(8) << right << "CGrade" << setw(8) << right << "Percent" << setw(8) << right << "Final" << endl;
+
+    for (int i = 0; i < size; ++i) {
+        double cPoints = (s[i].score / BAR) * 100.0;
+
+        outputFile << setw(15) << left << s[i].lastName
+            << setw(15) << left << s[i].firstName
+            << fixed << setprecision(2)
+            << setw(8) << right << s[i].score
+            << setw(8) << right << letterGrade(s[i].pointGrade)
+            << setw(8) << right << letterGrade(s[i].curveGrade)
+            << setw(8) << right << s[i].percentage
+            << setw(8) << right << letterGrade(s[i].finalGrade) << endl;
+    }
+
+    outputFile.close();
+}
+
+
+
+// Function to determine the final grade for each student
+Grade determineFinalGrade(StudentData& student) {
+    // Favorable grading scheme
+    if (student.score >= BAR) {
+        return (student.pointGrade > student.curveGrade) ? student.pointGrade : student.curveGrade;
+    }
+    else {
+        return F; // Use Point Cutoff (College Grade Scale)
+    }
+}
+
+int main() {
+    const string fileName = "scores.txt"; // Replace with the actual file name
+    const string outputFileName = "gradebook.txt"; // Replace with the desired output file name
+
+    StudentData* studentArray = new StudentData[CLASSSIZE];
+    int numStudents = 0;
+    int arraySize = CLASSSIZE;
+
+    ifstream inputFile(fileName);
+
+    if (!inputFile.is_open()) {
+        cerr << "Error opening file: " << fileName << endl;
+        return 1;
+    }
+
+    string line;
+    while (getline(inputFile, line) && numStudents < arraySize) {
+        istringstream iss(line);
+        StudentData student;
+        iss >> student.lastName >> student.firstName >> student.score;
+
+        // Calculate point-based and curve-based letter grades
+        if (student.score >= POINTA) {
+            student.pointGrade = A;
+        }
+        else if (student.score >= POINTAMINUS) {
+            student.pointGrade = AMINUS;
+        }
+        else if (student.score >= POINTBPLUS) {
+            student.pointGrade = BPLUS;
+        }
+        else if (student.score >= POINTB) {
+            student.pointGrade = B;
+        }
+        else if (student.score >= POINTBMINUS) {
+            student.pointGrade = BMINUS;
+        }
+        else if (student.score >= POINTCPLUS) {
+            student.pointGrade = CPLUS;
+        }
+        else if (student.score >= POINTC) {
+            student.pointGrade = C;
+        }
+        else if (student.score >= POINTCMINUS) {
+            student.pointGrade = CMINUS;
+        }
+        else if (student.score >= POINTD) {
+            student.pointGrade = D;
+        }
+        else {
+            student.pointGrade = F;
+        }
+
+        if (student.score >= CURVEA) {
+            student.curveGrade = A;
+        }
+        else if (student.score >= CURVEAMINUS) {
+            student.curveGrade = AMINUS;
+        }
+        else if (student.score >= CURVEBPLUS) {
+            student.curveGrade = BPLUS;
+        }
+        else if (student.score >= CURVEB) {
+            student.curveGrade = B;
+        }
+        else if (student.score >= CURVEBMINUS) {
+            student.curveGrade = BMINUS;
+        }
+        else if (student.score >= CURVECPLUS) {
+            student.curveGrade = CPLUS;
+        }
+        else if (student.score >= CURVEC) {
+            student.curveGrade = C;
+        }
+        else if (student.score >= CURVECMINUS) {
+            student.curveGrade = CMINUS;
+        }
+        else if (student.score >= CURVED) {
+            student.curveGrade = D;
+        }
+        else {
+            student.curveGrade = F;
+        }
+
+        // Insert the student into the array
+        insert(&studentArray, student, numStudents, arraySize);
+    }
+
+    inputFile.close();
+
+    // Calculate and set the percentage for each student
+    for (int i = 0; i < numStudents; ++i) {
+        studentArray[i].percentage = (studentArray[i].score / BAR) * 100.0;
+    }
+
+    // Determine and set the final grade for each student
+    for (int i = 0; i < numStudents; ++i) {
+        studentArray[i].finalGrade = determineFinalGrade(studentArray[i]);
+    }
+
+    // Output the gradebook to a file
+    outputGradeBook(outputFileName, studentArray, numStudents);
+
+    // Clean up memory
+    delete[] studentArray;
+
+    return 0;
+}
