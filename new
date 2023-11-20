@@ -6,7 +6,7 @@
 
 using namespace std;
 
-const int CLASSSIZE = 37;
+const int CLASSSIZE = 35;
 const double BAR = 60;
 
 const double POINTA = 93.0;
@@ -60,26 +60,27 @@ string letterGrade(Grade g) {
 
 // Function to insert a new student into the dynamic array
 bool insert(StudentData** v, StudentData n, int& b, int& s) {
-    if (b < s) {
-        (*v)[b] = n;
-        b++;
-        return true;
-    }
-    else {
+    if (b == s) {
         // If the array is full, double its size
         s *= 2;
         StudentData* temp = new StudentData[s];
+
+        // Copy existing data to the new array
         for (int i = 0; i < b; ++i) {
             temp[i] = (*v)[i];
         }
+
         delete[] * v;
         *v = temp;
-        // Insert the new student
-        (*v)[b] = n;
-        b++;
-        return true;
+
+        cout << "Array doubled. New size: " << s << endl;
     }
-    return false;
+
+    // Insert the new student at the correct index
+    (*v)[b] = n;
+    b++;
+
+    return true;
 }
 
 // Function to perform bubble sort on the array based on points (descending)
@@ -123,9 +124,10 @@ void outputGradeBook(string ofileName, StudentData s[], int size) {
         return a.lastName < b.lastName;
         });
 
+    outputFile << "Initial class size: " << size << endl; // Print initial class size
     outputFile << setw(15) << left << "Last Name" << setw(15) << left << "First Name"
-        << setw(8) << right << "Points" << setw(8) << right << "Grade"
-        << setw(8) << right << "CGrade" << setw(8) << right << "Percent" << setw(8) << right << "Final" << endl;
+        << setw(8) << right << "Points" << setw(12) << right << "Grade"
+        << setw(12) << right << "Percent" << setw(12) << right << "Grade" << setw(12) << right << "Final" << endl;
 
     for (int i = 0; i < size; ++i) {
         double cPoints = (s[i].score / BAR) * 100.0;
@@ -170,10 +172,10 @@ void outputGradeBook(string ofileName, StudentData s[], int size) {
             << setw(15) << left << s[i].firstName
             << fixed << setprecision(2)
             << setw(8) << right << s[i].score
-            << setw(8) << right << letterGrade(s[i].pointGrade)
-            << setw(8) << right << letterGrade(s[i].curveGrade)
-            << setw(8) << right << s[i].percentage
-            << setw(8) << right << letterGrade(s[i].finalGrade) << endl;
+            << setw(11) << right << letterGrade(s[i].pointGrade)
+            << setw(12) << right << s[i].percentage
+            << setw(12) << right << letterGrade(s[i].curveGrade)
+            << setw(12) << right << letterGrade(s[i].finalGrade) << endl;
     }
 
     outputFile.close();
@@ -185,9 +187,38 @@ Grade determineFinalGrade(StudentData& student) {
     return (student.pointGrade > student.curveGrade) ? student.pointGrade : student.curveGrade;
 }
 
+// Function to remove empty rows from the array
+void removeEmptyRows(StudentData*& v, int& size) {
+    int nonEmptyCount = 0;
+    for (int i = 0; i < size; ++i) {
+        if (!v[i].lastName.empty() && !v[i].firstName.empty()) {
+            if (nonEmptyCount != i) {
+                // Move non-empty data to the beginning of the array
+                v[nonEmptyCount] = v[i];
+            }
+            nonEmptyCount++;
+        }
+    }
+
+    // Resize the array to the number of non-empty rows
+    size = nonEmptyCount;
+    StudentData* temp = new StudentData[size];
+    for (int i = 0; i < size; ++i) {
+        temp[i] = v[i];
+    }
+
+    delete[] v;
+    v = temp;
+}
+
 int main() {
-    const string fileName = "scores.txt"; // Replace with the actual file name
-    const string outputFileName = "gradebook.txt"; // Replace with the desired output file name
+    string fileName, outputFileName;
+
+    cout << "Enter input file name: ";
+    getline(cin, fileName);
+
+    cout << "Enter output file name: ";
+    getline(cin, outputFileName);
 
     StudentData* studentArray = new StudentData[CLASSSIZE];
     int numStudents = 0;
@@ -201,7 +232,24 @@ int main() {
     }
 
     string line;
-    while (getline(inputFile, line) && numStudents < arraySize) {
+    while (getline(inputFile, line)) {
+        if (numStudents == arraySize) {
+            cout << "Initial Class Size: " << arraySize << endl;
+            // If the array is full, double its size
+            arraySize *= 2;
+            StudentData* temp = new StudentData[arraySize];
+
+            // Copy existing data to the new array
+            for (int i = 0; i < numStudents; ++i) {
+                temp[i] = studentArray[i];
+            }
+
+            delete[] studentArray;
+            studentArray = temp;
+
+            cout << "The Class size has been increased to " << arraySize << " students" << endl;
+        }
+
         istringstream iss(line);
         StudentData student;
         iss >> student.lastName >> student.firstName >> student.score;
@@ -239,7 +287,8 @@ int main() {
         }
 
         // Insert the student into the array
-        insert(&studentArray, student, numStudents, arraySize);
+        studentArray[numStudents] = student;
+        numStudents++;
     }
 
     inputFile.close();
@@ -251,6 +300,10 @@ int main() {
 
     // Output the gradebook to a file
     outputGradeBook(outputFileName, studentArray, numStudents);
+
+    removeEmptyRows(studentArray, numStudents);
+    cout << "The Total Enrollment = " << numStudents << endl;
+
 
     // Clean up memory
     delete[] studentArray;
